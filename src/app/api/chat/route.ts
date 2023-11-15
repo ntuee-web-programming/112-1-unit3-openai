@@ -1,5 +1,6 @@
 import { Message } from "@/utils/types";
 import { NextRequest, NextResponse } from "next/server";
+import { OpenAIStream, StreamingTextResponse } from "ai";
 
 import OpenAI from "openai";
 
@@ -20,10 +21,19 @@ export async function POST(request: NextRequest) {
       model: "gpt-3.5-turbo",
       temperature: 0,
       max_tokens: 1000,
+      // Set stream to true
+      stream: true,
     });
 
-    const newMessage: Message = response.choices[0].message;
-    return NextResponse.json(newMessage, { status: 200 });
+    const stream = OpenAIStream(response, {
+      onCompletion: async (response) => {
+        // Do something with the response
+        console.log(response);
+      },
+    });
+    return new StreamingTextResponse(stream, {
+      status: 200,
+    });
   } catch (error) {
     return NextResponse.json(
       { error: "Internal Server Error" },

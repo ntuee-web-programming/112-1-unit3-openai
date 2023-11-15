@@ -36,9 +36,40 @@ export default function Home() {
       }),
     });
 
-    const data = await response.json();
-
-    setMessages((messages) => [...messages, data]);
+    if (!response.body) {
+      return;
+    }
+    // Now the response is a stream
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let count = 0;
+    let buffer = "";
+    while (count < 1000) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      const text = decoder.decode(value);
+      buffer += text;
+      // Check last the role of the last message
+      // If it is user, then we have to create a new message
+      // If it is assistant, then we have to append to the last message
+      if (count === 0) {
+        setMessages((messages) => [
+          ...messages,
+          { role: "assistant", content: buffer },
+        ]);
+      } else {
+        setMessages((messages) => {
+          return [
+            ...messages.slice(0, messages.length - 1),
+            {
+              ...messages[messages.length - 1],
+              content: buffer,
+            },
+          ];
+        });
+      }
+      count++;
+    }
   };
 
   return (
