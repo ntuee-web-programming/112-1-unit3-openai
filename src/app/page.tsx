@@ -8,25 +8,39 @@ export default function Home() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "system",
-      content: "Welcome to the chat!",
+      content: "You are a helpful assistant.",
     },
     {
       role: "assistant",
       content: "Hello, how can I help you today?",
     },
-    {
-      role: "user",
-      content: "I need help with my account.",
-    },
-    // Add some dummy messages here
-
-    ...Array.from({ length: 10 }, (_, index) => ({
-      role: (index % 2 === 0 ? "user" : "assistant") as Message["role"],
-      content:
-        "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, voluptatibus.",
-    })),
-    // End of dummy messages
   ]);
+
+  const [inputText, setInputText] = useState<string>("");
+  const sendMessage = async () => {
+    // Construct new message
+    const newMessages: Message[] = [
+      ...messages,
+      {
+        role: "user",
+        content: inputText,
+      },
+    ];
+    setMessages(newMessages);
+    setInputText("");
+
+    const response = await fetch("/api/chat", {
+      method: "POST",
+      body: JSON.stringify({
+        messages: newMessages,
+      }),
+    });
+
+    const data = await response.json();
+
+    setMessages((messages) => [...messages, data]);
+  };
+
   return (
     <main className="flex h-screen overflow-hidden flex-col items-center justify-between">
       <div className="h-full border w-1/3 flex flex-col overflow-hidden">
@@ -39,8 +53,15 @@ export default function Home() {
           ))}
         </div>
         <div className="border-t p-2 flex gap-2">
-          <input className="grow text-lg bg-gray-100 rounded-lg px-2" />
-          <button className="text-lg bg-teal-600 hover:bg-teal-500 text-white px-2 py-1 rounded-lg">
+          <input
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            className="grow text-lg bg-gray-100 rounded-lg px-2"
+          />
+          <button
+            onClick={sendMessage}
+            className="text-lg bg-teal-600 hover:bg-teal-500 text-white px-2 py-1 rounded-lg"
+          >
             Send
           </button>
         </div>
